@@ -2,7 +2,7 @@
 
 A personal **Generative AI agent** built with **n8n** to manage a shopping list through WhatsApp. The assistant accepts natural-language requests, uses tools connected to **Google Sheets**, maintains conversation context with **Redis**, and responds using **WAHA**. The workflow also includes an audio-message transcription path using **Gemini**.
 
-> **Portfolio project (2025).** This repository contains a sanitized export of the original workflow and a configuration example. The original environment is not publicly hosted; running it requires setting up your own integrations, credentials, and instances. This repository does not claim measured business outcomes.
+> **Portfolio project (2025).** This repository contains a sanitized export of the original workflow and a configuration example. The original environment is not publicly hosted; running it requires setting up your own integrations, credentials, and instances.
 
 ## What it does
 
@@ -17,15 +17,23 @@ A personal **Generative AI agent** built with **n8n** to manage a shopping list 
 ## Architecture
 
 ```text
-WhatsApp → WAHA → n8n Webhook → Message routing
-                                  ├── Text ─────────────────────────┐
-                                  └── Audio → File → Gemini STT ────┤
-                                                                      ↓
-                                 Gemini Chat Model → n8n AI Agent ← Redis Memory
-                                                         ↕
-                                          Google Sheets tools (add/remove/list)
-                                                         ↓
-                                               WAHA → WhatsApp reply
+WhatsApp → WAHA → n8n Webhook
+                      |
+                Message Routing
+                 /          \
+               Text        Audio
+                 |           |
+                 |      Gemini Transcription
+                 |           |
+                 +-----------+
+                      |
+                  AI Agent
+                 /   |    \
+             Gemini Redis Google Sheets
+                      |
+                     WAHA
+                      |
+                 WhatsApp Reply
 ```
 
 ## Stack
@@ -51,11 +59,20 @@ WhatsApp → WAHA → n8n Webhook → Message routing
 5. Configure WAHA webhook events, media mounts, and an accessible webhook URL appropriate to your installation.
 6. Review model availability, n8n/WAHA node compatibility, and the workflow branches before testing.
 
-**Limitations:** An unused `Switch1` node remains in the original export. The agent prompt mentions a `send_list` tool, but the exported connections include only `add_item`, `remove_item`, and `list_items`; requests for the list link therefore should not be treated as a verified standalone tool implementation. Audio transcription is represented in the exported path but is not independently re-tested here. The workflow export is marked inactive.
+## Project Status
+
+This project was originally developed and tested in a local environment using Docker, n8n, WAHA, Redis, and Google Gemini.
+
+The repository includes the original workflow with sensitive information removed, along with a Docker Compose configuration example.
+
+To reproduce the project, users must configure their own credentials, integrations, and environment. The published version has not been re-tested after sanitization.
 
 ## Demonstration
 
+### n8n Workflow
 <img width="1600" height="900" alt="WhatsApp Image 2026-10-28 at 15 05 06" src="https://github.com/user-attachments/assets/f70552fc-f554-439d-818a-b4e58a0c6068" />
+
+### WhatsApp Conversation
 <img width="685" height="833" alt="WhatsApp Image 2026-10-28 at 15 06 10" src="https://github.com/user-attachments/assets/0ff10973-b092-41f0-9a11-4289c2367ce9" />
 
 ## Security
