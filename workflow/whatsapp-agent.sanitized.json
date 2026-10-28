@@ -1,0 +1,762 @@
+{
+  "name": "whats",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1792,
+        400
+      ],
+      "id": "11015c06-0a1a-49d5-8a72-bbf2788a4e40",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "172ce134-5448-4dbf-898d-cfc3aa5bc76b",
+              "name": "session",
+              "value": "={{ $json.body.session }}",
+              "type": "string"
+            },
+            {
+              "id": "e3885702-862d-4d08-9484-87e12b0f0519",
+              "name": "chatid",
+              "value": "={{ $json.body.payload.from }}",
+              "type": "string"
+            },
+            {
+              "id": "f594bd53-807d-4f31-a5f3-2dcc1a4ebe48",
+              "name": "pushName",
+              "value": "={{ $json.body.payload._data.Info.PushName }}",
+              "type": "string"
+            },
+            {
+              "id": "502d2bb2-ddcf-42e3-9838-a5aa7e36dda3",
+              "name": "payload_id",
+              "value": "={{ $json.body.payload.id }}",
+              "type": "string"
+            },
+            {
+              "id": "707371b1-c42c-4170-852d-8e536733655a",
+              "name": "event",
+              "value": "={{ $json.body.event }}",
+              "type": "string"
+            },
+            {
+              "id": "6ab601de-7d5d-47cf-bb2e-1061d9982604",
+              "name": "message",
+              "value": "={{ $json.body.payload.body }}",
+              "type": "string"
+            },
+            {
+              "id": "9c355c4a-56f5-4727-ad4f-2c722031590c",
+              "name": "fromMe",
+              "value": "={{ $json.body.payload.fromMe }}",
+              "type": "string"
+            },
+            {
+              "id": "d05f832c-5134-4b94-821d-d8410ee47d44",
+              "name": "media",
+              "value": "={{ $json.body.payload.media.url }}",
+              "type": "string"
+            },
+            {
+              "id": "a0c482d6-2647-4e40-8d78-400df5af7bd0",
+              "name": "hasMedia",
+              "value": "={{ $json.body.payload.hasMedia }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1568,
+        400
+      ],
+      "id": "b9c0fa14-2ed8-4c69-bcd4-cc0c028c80a7",
+      "name": "Dados"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.event === \"message\" && $json.fromMe === \"false\" && $json.hasMedia == false}}",
+                    "rightValue": "=true",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "b1f24166-3678-406e-883b-49a4de077946"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "11367020-0e28-4256-8247-cf3e42ab5aed",
+                    "leftValue": "={{ $json.hasMedia }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -1360,
+        400
+      ],
+      "id": "6e801579-8ed3-45fd-b189-11572cfe828e",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message }}",
+        "options": {
+          "systemMessage": "Você é um assistente de lista de compras em PT-BR.\n\nFerramentas que você pode chamar (use exatamente estes nomes e argumentos):\n\nadd_item(produto: string, quantidade: number, usuario: string) – adiciona uma linha (colunas: Produto, Quantidade, Usuario).\n\nremove_item(produto: string) – remove somente a linha cujo Produto é igual ao nome normalizado (case-insensitive; ignorar espaços extras). Se houver várias, a ferramenta remove uma única.\n\nlist_items() – lê a planilha e retorna as linhas. O node devolve um JSON com response: [...]. Cada item costuma ter chaves Produto/Quantidade/Usuario; se vierem variações, use equivalentes: Produto|produto|A e Quantidade|quantidade|B e Usuario|Usuário|C.\n\nse a pessoa pedir para enviar o link ou algo parecido, envie o seguinte link: https://docs.google.com/spreadsheets/d/REPLACE_WITH_YOUR_GOOGLE_SHEET_ID/edit\n\nRegras de decisão\n\nSempre que a intenção do usuário for adicionar, remover, listar ou enviar, chame somente uma ferramenta para aquela intenção (a não ser que o usuário peça vários itens na mesma frase; aí chame add_item em sequência, um por produto).\n\nSe faltar informação essencial (ex.: quantidade para add_item), faça uma pergunta objetiva (“Quantas unidades?”) e aguarde a próxima mensagem. Não chame ferramenta enquanto aguarda.\n\nNormalize o produto antes de passar para a ferramenta: minúsculo, singular, sem artigos (“o/a/um/uma”), sem plural (“maçãs” → “maçã”, “o leite” → “leite”).\n\nNunca devolva JSON bruto ao usuário. Você sempre deve escrever a resposta final apenas em texto no campo output do AI Agent.\n\nFormatação da resposta (sempre escrever em output)\n\nApós add_item bem-sucedido:\nAdicionei {quantidade} un de {produto}.\n\nApós remove_item:\nse removeu → Removi {produto}.\nse não encontrou → Não encontrei ‘{produto}’ na lista.\n\nApós list_items:\n\nSe houver linhas (considere json.response como array): monte uma lista de uma por linha:\n\nAqui está a lista:\n• {Quantidade} un de {Produto}\n• {Quantidade} un de {Produto}\n\n\nUse as chaves alternativas quando necessário (Produto|produto|A, Quantidade|quantidade|B). Ignore campos vazios.\n\nSe o array estiver vazio ou ausente → A lista está vazia.\n\nApós send_list:\nse houver link no retorno → Enviei o link da lista: {link}; caso contrário → Enviei o link da lista.\n\nSaudações/papo sem ação: Oi! Posso adicionar, remover, listar ou enviar sua lista.\n\nContrato de turno (anti-loop)\n\nEm um turno você faz ou uma pergunta ou chama uma ferramenta ou confirma o resultado. Nunca combine duas coisas.\n\nNão repita a mesma chamada de ferramenta com os mesmos argumentos no mesmo turno.\n\nSe a mensagem do usuário for “ok/valeu/obrigado”, responda curto: Certo. (sem ferramenta).\n\nSe o usuário ecoar sua confirmação (ex.: “Adicionei…” / “Removi…”), responda apenas Certo. (sem ferramenta).\n\nExemplos\n\n“adiciona 3 maçãs” → add_item({ produto: \"maçã\", quantidade: 3, usuario: \"<nome se conhecido>\" }) → output: \"Adicionei 3 un de maçã.\"\n\n“remove leite” → remove_item({ produto: \"leite\" }) → output: \"Removi leite.\"\n\n“lista” → list_items({}) → se response.length>0 formate em bullets; senão output: \"A lista está vazia.\"\n\n“envia a lista” → send_list({}) → output: \"Enviei o link da lista.\" (ou com link, se houver)\n\n“adiciona maçã” (sem quantidade) → perguntar “Quantas unidades?” e aguardar.\n\nDica rápida\n\nMantenha o seu Send a text message apontando para {{ $('AI Agent').item.json.output }} (ou equivalente) — como o agente agora sempre preenche output já formatado, o mesmo node serve para todos os casos.\n\nNo node list_items, deixe o retorno como está (com response: [...]). O agente já foi instruído a ler json.response e montar as bullets.\n\nREGRAS ESPECÍFICAS PARA \"LISTAR\":\n- Se a mensagem do usuário contiver qualquer uma destas palavras/expressões: \n  [\"lista\", \"listar\", \"ver lista\", \"mostrar lista\", \"itens\", \"o que tem\", \"o que há\", \"me mostra a lista\", \"liste os itens\"],\n  você DEVE chamar exatamente uma vez a ferramenta list_items().\n- Nunca responda “A lista está vazia.” sem ter executado list_items() neste turno e verificado o resultado.\n\nCOMO LER O RETORNO DE list_items():\n- O node pode devolver:\n  (a) um único item com a chave `response` contendo um array de linhas; ou\n  (b) vários itens (cada item = uma linha).\n- Considere como “linhas”:\n  • se existir `response` e for array → use `response`;\n  • caso contrário, use todos os itens retornados pelo node.\n- Para cada linha, pegue as chaves (aceite variações):\n  Produto | produto | A\n  Quantidade | quantidade | B\n  Usuario | Usuário | C\n- Ignore linhas vazias. Se houver 1+ linha, formate assim no `output`:\n  Aqui está a lista:\n  • {Quantidade} un de {Produto}\n  • {Quantidade} un de {Produto}\n- Se não houver linhas → `output`: A lista está vazia.",
+          "returnIntermediateSteps": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -144,
+        368
+      ],
+      "id": "b1c12007-f534-4b97-a543-0ab6adbd9dfa",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -272,
+        576
+      ],
+      "id": "d8e9904f-04a8-437a-a768-4142bed0ef91",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.chatid }}",
+        "sessionTTL": 3600,
+        "contextWindowLength": 3
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.5,
+      "position": [
+        -128,
+        576
+      ],
+      "id": "f664a754-1e9b-4358-90f4-a99a2c793c8b",
+      "name": "Redis Chat Memory"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Seen",
+        "session": "={{ $('Dados').item.json.session }}",
+        "chatId": "={{ $('Dados').item.json.chatid }}",
+        "messageId": "={{ $('Dados').item.json.payload_id }}",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        160,
+        368
+      ],
+      "id": "7fa12093-d4c2-4ae5-9960-a175e5f50d64",
+      "name": "Send Seen"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('Dados').item.json.session }}",
+        "chatId": "={{ $('Dados').item.json.chatid }}",
+        "text": "={{ $('AI Agent').item.json.output }}",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        336,
+        368
+      ],
+      "id": "662483c5-9c39-41ff-b725-ebd93f022781",
+      "name": "Send a text message"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.intent }}",
+                    "rightValue": "add",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "3cb86ab3-e939-4b63-8027-0fb9fdac3f29"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f7ed4384-4fd8-4fda-b9bb-89f92ffc10c9",
+                    "leftValue": "={{ $json.output.intent }}",
+                    "rightValue": "remove",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "aa80258c-e1be-473e-8b81-e9842f36ac2f",
+                    "leftValue": "={{ $json.output.intent }}",
+                    "rightValue": "list",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5b262a0e-14d7-4e61-bf28-f7db8841ab52",
+                    "leftValue": "={{ $json.output.intent }}",
+                    "rightValue": "send",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8f043c65-149a-482d-929c-c14b0201b84a",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Adiciona um item na planilha de lista de compras (Google Sheets). Use quando o usuário disser \"adicionar\", \"colocar\", \"quero X\", etc. Parâmetros: produto (string), quantidade (number|null), usuário (string|null).",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "lista_mercado",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/REPLACE_WITH_YOUR_GOOGLE_SHEET_ID/edit"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1143036120,
+          "mode": "list",
+          "cachedResultName": "itens",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/REPLACE_WITH_YOUR_GOOGLE_SHEET_ID/edit"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Quantidade": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Quantidade', `Número inteiro > 0. Se o usuário falar “uma”, converter para 1.`, 'string') }}",
+            "Usuário": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Usu_rio', ``, 'string') }}",
+            "Produto": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Produto', `Nome do produto normalizado (singular, minúsculas). Ex.: \"maçã\", \"leite\", \"arroz\". Remover artigos (o/a/um/uma).`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Produto",
+              "displayName": "Produto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Quantidade",
+              "displayName": "Quantidade",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Usuário",
+              "displayName": "Usuário",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        0,
+        688
+      ],
+      "id": "81b66e04-e80b-4810-a6fb-9396e0636eb6",
+      "name": "add_item"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Você é um assistente de lista de compras. Quando o usuário pedir para remover um item, siga exatamente este procedimento antes de chamar qualquer ferramenta:\n\nPlanilha\n\nA planilha tem cabeçalho na linha 1.\n\nColunas: A=Produto, B=Quantidade, C=Usuário.\n\nNunca delete a linha 1 (cabeçalho).\n\nVerifique na coluna A se encontra o produto com o nome que o usuário solicitou, se encontrar exclua a linha com esse produto",
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "lista_mercado",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/REPLACE_WITH_YOUR_GOOGLE_SHEET_ID/edit"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1143036120,
+          "mode": "list",
+          "cachedResultName": "itens",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/REPLACE_WITH_YOUR_GOOGLE_SHEET_ID/edit"
+        },
+        "startIndex": "={{ $fromAI('Start_Row_Number', `Deletar a linha do item que o usuário pediu, apagar SOMENTE a linha com o mesmo nome do produto.`, 'number') }}"
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        192,
+        560
+      ],
+      "id": "57abbe93-5f20-4a3b-89a2-4b541959e8cd",
+      "name": "remove_item"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Liste todos os items apenas onde tiver valor na coluna produto e retorne para o usuário.",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "lista_mercado",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/REPLACE_WITH_YOUR_GOOGLE_SHEET_ID/edit"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1143036120,
+          "mode": "list",
+          "cachedResultName": "itens",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/REPLACE_WITH_YOUR_GOOGLE_SHEET_ID/edit"
+        },
+        "combineFilters": "OR",
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRangeA1",
+              "range": "A:D"
+            }
+          },
+          "outputFormatting": {
+            "values": {
+              "general": "UNFORMATTED_VALUE",
+              "date": "FORMATTED_STRING"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        128,
+        704
+      ],
+      "id": "2d3824ee-7d87-4a31-9322-f52d5845f7fd",
+      "name": "list_items"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "inputType": "binary",
+        "binaryPropertyName": "audio",
+        "simplify": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        672
+      ],
+      "id": "22903cda-2017-4260-b31c-fc151ef23382",
+      "name": "Transcribe a recording",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5351bf70-a06a-4958-8b51-9ada80cbe011",
+              "name": "message",
+              "value": "={{ $json.candidates[0].content.parts[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "184f43ba-0c50-42e9-96fc-3749d032ec3d",
+              "name": "fromMe",
+              "value": "false",
+              "type": "string"
+            },
+            {
+              "id": "79bce275-2a23-482a-b697-e425bde437ee",
+              "name": "chatid",
+              "value": "={{ $('Switch').item.json.chatid }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -528,
+        656
+      ],
+      "id": "2babafd3-c50d-4347-9414-301e74ac10d3",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f7639318-f65c-4e65-a2d5-5e72e9b0cc3f",
+              "name": "filePath",
+              "value": "={{ $json.media.replace(/^https?:\\/\\/[^/]+\\/api\\/files\\//, '/waha_media/') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1152,
+        496
+      ],
+      "id": "3b46e8af-6888-4112-8f92-f6094f278656",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ $json.filePath }}",
+        "options": {
+          "dataPropertyName": "audio"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        -944,
+        496
+      ],
+      "id": "4f06049a-2206-4c05-b811-d5b26eccda76",
+      "name": "Read/Write Files from Disk"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dados": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Seen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Seen": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        []
+      ]
+    },
+    "add_item": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "remove_item": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "list_items": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}
