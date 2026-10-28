@@ -1,99 +1,66 @@
-# WhatsApp AI Agent | Gemini & n8n 🤖
+# WhatsApp AI Agent — Gemini, n8n, WAHA & Redis
 
-### AI-powered conversational assistant with workflow automation and external integrations
+A personal **Generative AI agent** built with **n8n** to manage a shopping list through WhatsApp. The assistant accepts natural-language requests, uses tools connected to **Google Sheets**, maintains conversation context with **Redis**, and responds using **WAHA**. The workflow also includes an audio-message transcription path using **Gemini**.
 
-An intelligent WhatsApp assistant built using **n8n, Google's Gemini API, and AI Agent workflows** to understand natural language requests, manage shopping lists, and automate interactions with external services.
+> **Portfolio project (2025).** This repository contains a sanitized export of the original workflow and a configuration example. The original environment is not publicly hosted; running it requires setting up your own integrations, credentials, and instances. This repository does not claim measured business outcomes.
 
-This project explores how Large Language Models (LLMs) can be integrated with automation workflows, conversational memory, and external tools to build practical AI-powered applications.
+## What it does
 
-## Project Overview
-
-The goal was to develop a conversational assistant capable of processing WhatsApp messages and performing actions based on user requests.
-
-Instead of relying exclusively on predefined conversational rules, the assistant uses an LLM-based agent to interpret messages and interact with connected tools.
-
-Key capabilities include:
-
-- Natural language understanding powered by Gemini.
-- AI Agent orchestration using n8n.
-- Conversational memory for maintaining context.
-- Shopping list management through external integrations.
-- Google Sheets integration for structured data.
-- Automated message processing and responses.
+- Receives incoming WhatsApp message events from WAHA through an n8n webhook.
+- Processes ordinary text requests through a **Gemini-powered AI Agent**.
+- Lets the agent **add, remove, and list** grocery items in a **Google Sheets** spreadsheet using tool calls.
+- Requests missing information (such as quantity) before adding an item.
+- Maintains conversational context with **Redis Chat Memory**.
+- Includes a branch to **read and transcribe voice recordings** with Gemini before routing text to the agent.
+- Sends text responses and message-read acknowledgements back through WAHA.
 
 ## Architecture
 
-The application was designed using a visual workflow in n8n.
+```text
+WhatsApp → WAHA → n8n Webhook → Message routing
+                                  ├── Text ─────────────────────────┐
+                                  └── Audio → File → Gemini STT ────┤
+                                                                      ↓
+                                 Gemini Chat Model → n8n AI Agent ← Redis Memory
+                                                         ↕
+                                          Google Sheets tools (add/remove/list)
+                                                         ↓
+                                               WAHA → WhatsApp reply
+```
 
-![AI Agent Workflow](images/workflow.png)
+## Stack
 
-### Workflow Components
+- **n8n** — workflow and agent orchestration
+- **Google Gemini** — chat model (`gemini-2.0-flash` in the exported workflow) and audio transcription (`gemini-2.5-flash`)
+- **Redis** — chat memory keyed by conversation
+- **Google Sheets** — shopping-list persistence and agent tools
+- **WAHA** — WhatsApp gateway integration
+- **Docker Compose and ngrok** — original local development infrastructure
 
-**1. Webhook**
+## Repository files
 
-Receives incoming requests and initiates the automation workflow.
+- [`workflow/whatsapp-agent.sanitized.json`](workflow/whatsapp-agent.sanitized.json) — sanitized n8n workflow export; importable as a starting point, **not ready to run without setup**
+- [`docker-compose.example.yml`](docker-compose.example.yml) — illustrative configuration with no live access tokens or passwords
 
-**2. Data Processing**
+## Setup notes
 
-Processes incoming messages, extracts relevant information, and prepares data for the AI Agent.
+1. Install Docker and provision your own n8n, Redis, and WAHA services. This repository's Compose file is a **configuration example**, not a fully tested deployment recipe.
+2. Import the workflow JSON into n8n.
+3. Configure your own Gemini API, Google Sheets OAuth2, Redis, and WAHA credentials in the relevant nodes.
+4. Create a Google Sheets document with columns `Produto`, `Quantidade`, and `Usuário`, and replace the placeholder document ID in the relevant Google Sheets nodes and agent prompt.
+5. Configure WAHA webhook events, media mounts, and an accessible webhook URL appropriate to your installation.
+6. Review model availability, n8n/WAHA node compatibility, and the workflow branches before testing.
 
-**3. Gemini LLM**
+**Limitations:** An unused `Switch1` node remains in the original export. The agent prompt mentions a `send_list` tool, but the exported connections include only `add_item`, `remove_item`, and `list_items`; requests for the list link therefore should not be treated as a verified standalone tool implementation. Audio transcription is represented in the exported path but is not independently re-tested here. The workflow export is marked inactive.
 
-Provides language understanding and response generation capabilities.
+## Demonstration
 
-**4. AI Agent**
+Screenshots of the workflow and WhatsApp conversation are available from the original project. **Before adding them to this public repository, anonymize chat names, profile pictures, personal messages, and any other identifying data.**
 
-Interprets user requests and selects the appropriate tools or actions according to the conversation context.
+## Security
 
-**5. Conversational Memory**
-
-Stores conversational context to support interactions across multiple messages.
-
-**6. External Tools**
-
-Connects the AI Agent to services such as Google Sheets for accessing and managing shopping list information.
-
-**7. Automated Responses**
-
-Generates and sends responses through the messaging integration.
-
-## Tech Stack
-
-| Technology | Purpose |
-|---|---|
-| n8n | Workflow automation and AI Agent orchestration |
-| Google Gemini | Large Language Model |
-| Google Sheets | Structured data integration |
-| Webhooks | Event-driven communication |
-| AI Agent | Tool selection and execution |
-| Conversational Memory | Context management |
-| WhatsApp | User interaction interface |
-
-## What I Learned
-
-This project provided hands-on experience with:
-
-- Building LLM-powered agents.
-- Integrating language models with external tools.
-- Designing automated conversational workflows.
-- Using APIs and webhooks to connect applications.
-- Managing conversational context.
-- Developing practical AI-based automations.
-
-## Project Status
-
-**Completed academic/personal project — documentation showcase.**
-
-The original workflow was developed using n8n's free environment and is no longer available for export.
-
-This repository documents the application's architecture and original implementation through screenshots and technical descriptions.
-
-The repository does not currently include an executable workflow or deployment instructions.
+The original export and infrastructure files contained private resource identifiers and infrastructure configuration. This public version deliberately removes credential references, instance identifiers, direct spreadsheet links, access tokens, and hard-coded secrets. **Never commit your actual `.env`, tokens, credentials, or a raw n8n export without reviewing it.**
 
 ## Author
 
-**Ana Flávia Martins dos Santos**
-
-Computer Science Undergraduate | AI & GenAI Enthusiast
-
-[GitHub](https://github.com/aflavinhams) | [LinkedIn](https://www.linkedin.com/in/ana-flavia-martins-dos-santos-058104281)
+Ana Flávia Martins dos Santos — [GitHub](https://github.com/aflavinhams) · [LinkedIn](https://www.linkedin.com/in/ana-flavia-martins-dos-santos-058104281)
