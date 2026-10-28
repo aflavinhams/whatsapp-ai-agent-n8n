@@ -55,7 +55,8 @@ WhatsApp → WAHA → n8n Webhook → Message routing
 
 ## Demonstration
 
-Screenshots of the workflow and WhatsApp conversation are available from the original project. **Before adding them to this public repository, anonymize chat names, profile pictures, personal messages, and any other identifying data.**
+<img width="1600" height="900" alt="WhatsApp Image 2026-10-28 at 15 05 06" src="https://github.com/user-attachments/assets/f70552fc-f554-439d-818a-b4e58a0c6068" />
+<img width="685" height="833" alt="WhatsApp Image 2026-10-28 at 15 06 10" src="https://github.com/user-attachments/assets/0ff10973-b092-41f0-9a11-4289c2367ce9" />
 
 ## Security
 
