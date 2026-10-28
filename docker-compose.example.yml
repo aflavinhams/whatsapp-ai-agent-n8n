@@ -1,0 +1,42 @@
+# Reference configuration only; adapt and verify before running.
+# Set variables via a local .env file (never commit that file).
+services:
+  redis:
+    image: redis:7
+    command: ["sh", "-c", "exec redis-server --requirepass "$$REDIS_PASSWORD""]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    volumes:
+      - redis_data:/data
+
+  n8n:
+    image: n8nio/n8n:latest
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      GENERIC_TIMEZONE: America/Sao_Paulo
+      WEBHOOK_URL: ${WEBHOOK_URL:?Set WEBHOOK_URL in .env}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - waha_media:/waha_media:ro
+
+  waha:
+    image: devlikeapro/waha:latest
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      WHATSAPP_HOOK_URL: ${WHATSAPP_HOOK_URL:?Set WHATSAPP_HOOK_URL in .env}
+      WHATSAPP_HOOK_EVENTS: message
+      WHATSAPP_DEFAULT_ENGINE: BAILEYS
+      WHATSAPP_MEDIA_AUTO_DOWNLOAD: "true"
+    volumes:
+      - waha_sessions:/app/.sessions
+      - waha_media:/tmp/whatsapp-files
+    depends_on:
+      - n8n
+
+volumes:
+  redis_data:
+  n8n_data:
+  waha_sessions:
+  waha_media:
